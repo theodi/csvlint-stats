@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>CSVlint - Hosts</title>
+<style>
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.428571429;
+  color: #333333;
+  background-color: white;
+}
+</style>
+<svg class="chart"></svg>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script src="http://d3js.org/colorbrewer.v1.min.js"></script>
+<script>
+
+var chart = d3.select(".chart")
+    .attr("width", 480)
+    .attr("height", 480)
+
+var scale = d3.scale.linear()
+            .domain([0, 100])
+            .range([0, 2 * Math.PI]);
+
+var arc = d3.svg.arc()
+            .innerRadius(120)
+            .outerRadius(240)
+            .startAngle(function(d){return scale(d.start);})
+            .endAngle(function(d){return scale(d.end);});
+
+var colourScale = d3.scale.category20b()
+
+d3.json("statistics.json", function(error, data) {
+  entries = d3.entries(data.hosts)
+              .sort(function(a,b) { return a.value - b.value })
+              .reverse()
+  var total = 0
+  entries.forEach(function(e) { total += e.value })
+  var start = 0
+  entries = entries.slice(0,10).map(function(e) {
+              pc = (e.value / total) * 100
+              hsh = {
+                key: e.key,
+                start: start,
+                end: pc + start
+              }
+              start = hsh["end"]
+              return hsh
+            })
+  entries[10] = {key: "Remainder", start: start, end: 100}
+
+  chart.selectAll("path")
+      .data(entries)
+    .enter().append("path")
+    .attr("fill", function(d,i) { return colourScale(i) })
+    .attr("d", arc)
+    .attr("transform", "translate(240, 240)");
+
+
+});
+
+</script>
