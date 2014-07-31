@@ -53,7 +53,7 @@ function arc(inner, outer) {
 
 var colourScale = d3.scale.category20b()
 
-d3.json("statistics.json", function(error, data) {
+d3.json("http://csvlint.io/statistics.json", function(error, data) {
   entries = d3.entries(data.hosts)
               .sort(function(a,b) { return a.value - b.value })
               .reverse()

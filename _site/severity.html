@@ -83,7 +83,7 @@ var chart = d3.select(".chart")
 
 var messages = JSON.parse(messages)
 
-d3.json("statistics.json", function(error, data) {
+d3.json("http://csvlint.io/statistics.json", function(error, data) {
   entries = d3.entries(data.severity)
   keys = entries.map(function(e) { return e.key })
 
@@ -107,7 +107,7 @@ d3.json("statistics.json", function(error, data) {
       .call(yAxis);
 
   keys.forEach(function(key) {
-    x0 = 92
+    x0 = 94
 
     level = d3.entries(data.severity[key])
               .sort(function(a,b) { return a.value - b.value })
@@ -124,7 +124,7 @@ d3.json("statistics.json", function(error, data) {
         .data(level)
       .enter().append("rect")
         .attr("class", "bar "+ key)
-        .attr("x", function(d) { return x(d.x0); })
+        .attr("x", function(d) { return x(d.x0) + 6; })
         .attr("y", function(d) { return y(key.humanize()); })
         .attr("height", function(d) { return y.rangeBand(); })
         .attr("width", function(d) { return x(d.x1) - x(d.x0); })

@@ -81,7 +81,7 @@ var chart = d3.select(".chart")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
-d3.json("statistics.json", function(error, data) {
+d3.json("http://csvlint.io/statistics.json", function(error, data) {
   entries = d3.entries(data.results)
   entries.map(function(d) { d.key = d.key.humanize() })
 
