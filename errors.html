@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<title>CSVlint - Severity</title>
+<style>
+
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 14px;
+  line-height: 1.428571429;
+  color: #333333;
+  background-color: white;
+  width: 950px;
+}
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #333;
+  shape-rendering: crispEdges;
+}
+
+div.tooltip {
+  position: absolute;
+  text-align: center;
+  padding: 4px;
+  background-color: #FFEC8B;
+  border: 0px;
+  pointer-events: none;
+}
+
+.tooltip h2 {
+  margin: 0 0 4px 0;
+  font-size: 16px;
+  font-weight: normal;
+}
+
+.tooltip p {
+  margin: 0;
+}
+
+#view_options {
+  text-align: right;
+  margin: 0;
+}
+
+</style>
+<body>
+  <p id="view_options">
+      View by:
+      <label><input type="radio" name="view" class="view" value="severity" checked="checked" />Severity</label>
+      <label><input type="radio" name="view" class="view" value="category" />Category</label>
+  </p>
+<svg class="chart"></svg>
+</body>
+<script src="d3.v3.min.js"></script>
+<script src="messages.json"></script>
+
+<script>
+
+String.prototype.humanize = function() {
+  return this.replace(/_/g, ' ')
+       .replace(/(\w+)/g, function(match) {
+         return match.charAt(0).toUpperCase() + match.slice(1);
+       });
+};
+
+var margin = {top: 20, right: 40, bottom: 30, left: 40},
+    width = 950 - (margin.left + margin.right),
+    height = 500 - (margin.top + margin.bottom);
+
+var x = d3.scale.linear()
+    .range([0, width - 80]);
+
+var y = d3.scale.ordinal()
+    .rangeRoundBands([height, 0], 0.1);
+
+var xAxis = d3.svg.axis()
+    .scale(x)
+    .orient("bottom");
+
+var yAxis = d3.svg.axis()
+    .scale(y)
+    .orient("left");
+
+var colourScale = d3.scale.category20b();
+
+var tooltip = d3.select("body").append("div")
+  .attr("class", "tooltip")
+  .style("opacity", 0);
+
+var chart = d3.select(".chart")
+    .attr("width", width  + margin.left + margin.right)
+    .attr("height", height  + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+var messages = JSON.parse(messages);
+
+function loadChart(type) {
+  d3.json("http://csvlint.io/statistics.json", function(error, data) {
+    chart.selectAll("*").remove();
+    entries = d3.entries(data[type])
+    keys = entries.map(function(e) { return e.key })
+
+    maxVals = d3.max(entries.map(function(d) {
+                                  return d3.values(d.value)
+                                           .reduce(function(a,b) { return a + b })
+                                })
+                    );
+
+    y.domain(entries.map(function(d) { return d.key.humanize(); }));
+    x.domain([0, Math.ceil(maxVals / 50) * 50]);
+
+    chart.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(80," + height + ")")
+      .call(xAxis);
+
+    chart.append("g")
+        .attr("class", "y axis")
+        .attr("transform", "translate(80,0)")
+        .call(yAxis);
+
+    keys.forEach(function(key) {
+      x0 = 94
+
+      level = d3.entries(data[type][key])
+                .sort(function(a,b) { return a.value - b.value })
+                .map(function(d) {
+                  return {
+                    key: d.key,
+                    value: d.value,
+                    x0: x0,
+                    x1: x0 += d.value
+                  }
+                });
+
+      chart.selectAll(".bar ."+ key)
+          .data(level)
+        .enter().append("rect")
+          .attr("class", "bar "+ key)
+          .attr("x", function(d) { return x(d.x0) + 6; })
+          .attr("y", function(d) { return y(key.humanize()); })
+          .attr("height", function(d) { return y.rangeBand(); })
+          .attr("width", function(d) { return x(d.x1) - x(d.x0); })
+          .attr("fill", function(d,i) { return colourScale(i) })
+          .on('mouseover', function(d, i) {
+            tooltip.transition()
+                    .duration(200)
+                    .style("opacity", .9);
+            tooltip.html("<h2>" + messages[d.key] + "</h2><p>"+ d.value +"</p>")
+                    .style("left", (d3.event.pageX - 40) + "px")
+                    .style("top", (d3.event.pageY - 22) + "px")
+          })
+          .on('mouseout', function(d,i){
+            tooltip.transition()
+                    .duration(200)
+                    .style("opacity", 0);
+          });
+
+    })
+
+    chart.append("rect")
+      .attr("width", width)
+      .attr("height", height)
+      .attr("transform", "translate(81,0)")
+      .attr("fill", "#fff")
+      .transition()
+        .duration(2000)
+        .attr("transform", "translate("+ width +",0)")
+        .attr("width", 0)
+
+  });
+}
+
+(function() {
+  loadChart('severity');
+  d3.selectAll(".view").on('click', function(){
+    loadChart(this.value)
+  });
+})();
+
+</script>
