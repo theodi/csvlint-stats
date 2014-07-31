@@ -11,16 +11,8 @@ body {
   background-color: white;
 }
 
-.bar {
-  fill: #ff6700;
-}
-
-.cover {
-  fill: #fff;
-}
-
 .bar:hover {
-  fill: #5bc0de;
+  opacity: 0.8;
 }
 
 .axis text {
@@ -43,6 +35,12 @@ div.tooltip {
   background: yellow;
   border: 0px;
   pointer-events: none;
+}
+
+.bartext {
+  font-size: 100px;
+  opacity: 0;
+  fill: #333;
 }
 
 </style>
@@ -75,6 +73,8 @@ var yAxis = d3.svg.axis()
     .scale(y)
     .orient("left");
 
+var colour = d3.scale.category10()
+
 var chart = d3.select(".chart")
     .attr("width", width  + margin.left + margin.right)
     .attr("height", height  + margin.top + margin.bottom)
@@ -101,41 +101,73 @@ d3.json("statistics.json", function(error, data) {
       .attr("class", "y axis")
       .call(yAxis);
 
-  chart.selectAll(".bar")
+  bar = chart.selectAll(".bar")
       .data(entries)
-    .enter().append("rect")
+    .enter().append("g")
       .attr("class", "bar")
-      .attr("x", function(d) { return x(d.key); })
-      .attr("y", function(d) { return y(d.value); })
-      .attr("height", function(d) { return height - y(d.value); })
-      .attr("width", x.rangeBand())
-      .on('mouseover', function(d, i) {
-        tooltip.transition()
-                .duration(200)
-                .style("opacity", .9);
-        tooltip.html(d.value)
-                .style("left", (d3.event.pageX - 40) + "px")
-                .style("top", (d3.event.pageY - 22) + "px")
-       })
-      .on("mouseout", function(d) {
-            tooltip.transition()
-                .duration(500)
-                .style("opacity", 0);
-       })
+      .attr("transform", function(d,i) { return "translate(0,0)"; })
+      .attr("height", height)
+      .attr("width", x.rangeBand());
 
-  chart.selectAll(".cover")
-      .data(entries)
-    .enter().append("rect")
-    .attr("class", "cover")
-    .attr("height", height)
-    .attr("x", function(d) { return x(d.key); })
-    .attr("y", function(d) { 0 })
-    .attr("width", x.rangeBand())
-    .transition()
-    .duration(2000)
-    .attr("height", 0)
+  bar.append("rect")
+     .attr("x", function(d) { return x(d.key); })
+     .attr("y", function(d) { return y(d.value); })
+     .attr("height", function(d) { return height - y(d.value); })
+     .attr("width", x.rangeBand())
+     .attr("fill", function(d,i) { return colour(i); })
 
+  bar.append("text")
+      .attr("class", "bartext")
+      .attr("x", function(d) { return x(d.key) + x.rangeBand() / 2 })
+      .attr("y", height)
+      .style("text-anchor", "middle")
+      .text(function(d) { return d.value });
+
+  bar.on("mouseover", function(d,i) {
+    d3.select(this)
+      .select("text")
+      .style("opacity", "0.5")
+  })
+  .on("mouseout", function(d,i) {
+    d3.select(this)
+      .select("text")
+      .style("opacity", "0")
+  })
+
+  // chart.selectAll(".bar")
+  //     .data(entries)
+  //   .enter().append("rect")
+  //     .attr("class", "bar")
+  //     .attr("x", function(d) { return x(d.key); })
+  //     .attr("y", function(d) { return y(d.value); })
+  //     .attr("height", function(d) { return height - y(d.value); })
+  //     .attr("width", x.rangeBand())
+  //     .attr("fill", function(d,i) { return colour(i); })
+  //     .on('mouseover', function(d, i) {
+  //       tooltip.transition()
+  //               .duration(200)
+  //               .style("opacity", .9);
+  //       tooltip.html(d.value)
+  //               .style("left", (d3.event.pageX - 40) + "px")
+  //               .style("top", (d3.event.pageY - 22) + "px")
+  //      })
+  //     .on("mouseout", function(d) {
+  //           tooltip.transition()
+  //               .duration(500)
+  //               .style("opacity", 0);
+  //      })
+
+       chart.append("rect")
+         .attr("width", width)
+         .attr("height", height)
+         .attr("fill", "#fff")
+         .attr("transform", "translate(1,0)")
+         .transition()
+           .duration(2000)
+           .attr("height", 0)
 
 });
+
+
 
 </script>
